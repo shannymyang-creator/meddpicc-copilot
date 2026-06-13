@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MEDDPICC AI Copilot</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c10;
+    --bg2: #111318;
+    --bg3: #181c24;
+    --bg4: #1f242f;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.13);
+    --text: #f0f0ee;
+    --text2: #9ba3af;
+    --text3: #5c6470;
+    --accent: #4f7bff;
+    --accent2: #7c9fff;
+    --accent-bg: rgba(79,123,255,0.1);
+    --green: #2fd67c;
+    --green-bg: rgba(47,214,124,0.1);
+    --amber: #f5a623;
+    --amber-bg: rgba(245,166,35,0.1);
+    --red: #ff5c5c;
+    --red-bg: rgba(255,92,92,0.1);
+    --teal: #30d9c8;
+    --teal-bg: rgba(48,217,200,0.1);
+    --purple: #b48aff;
+    --purple-bg: rgba(180,138,255,0.1);
+    --radius: 10px;
+    --radius-lg: 16px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+
+  /* HEADER */
+  header { display: flex; align-items: center; justify-content: space-between; padding: 0 24px; height: 54px; border-bottom: 0.5px solid var(--border); background: var(--bg); position: sticky; top: 0; z-index: 200; }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-mark { width: 30px; height: 30px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: 'Instrument Serif', serif; font-size: 15px; color: #fff; font-style: italic; }
+  .logo-text { font-size: 15px; font-weight: 500; color: var(--text); letter-spacing: -0.3px; }
+  .logo-sub { font-size: 11.5px; color: var(--text3); margin-left: 2px; font-family: 'Instrument Serif', serif; font-style: italic; }
+  .logo-badge { font-size: 10px; font-weight: 500; background: var(--accent-bg); color: var(--accent2); padding: 2px 8px; border-radius: 20px; border: 0.5px solid rgba(79,123,255,0.3); letter-spacing: 0.5px; text-transform: uppercase; }
+  .header-right { display: flex; align-items: center; gap: 10px; }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+  .status-label { font-size: 12px; color: var(--text2); transition: opacity 0.25s ease; }
+  .header-btn { background: var(--bg3); border: 0.5px solid var(--border2); border-radius: 8px; padding: 5px 12px; font-size: 12px; color: var(--text2); cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s; display: flex; align-items: center; gap: 5px; }
+  .header-btn:hover { background: var(--bg4); color: var(--text); }
+  .header-btn.active { background: var(--accent-bg); color: var(--accent2); border-color: rgba(79,123,255,0.3); }
+
+  /* LAYOUT */
+  .app { display: flex; flex: 1; height: calc(100vh - 54px); overflow: hidden; }
+
+  /* SIDEBAR */
+  .sidebar { width: 216px; min-width: 216px; background: var(--bg2); border-right: 0.5px solid var(--border); padding: 14px 0; display: flex; flex-direction: column; overflow-y: auto; }
+  .sidebar-section { padding: 0 10px; margin-bottom: 4px; }
+  .sidebar-label { font-size: 10px; font-weight: 500; letter-spacing: 0.8px; text-transform: uppercase; color: var(--text3); padding: 8px 8px 5px; }
+  .nav-btn { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 10px; border-radius: var(--radius); background: transparent; border: none; color: var(--text2); font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; text-align: left; transition: background 0.15s, color 0.15s; }
+  .nav-btn:hover { background: var(--bg3); color: var(--text); }
+  .nav-btn.active { background: var(--accent-bg); color: var(--accent2); border: 0.5px solid rgba(79,123,255,0.2); }
+  .nav-icon { width: 16px; text-align: center; flex-shrink: 0; }
+  .nav-num { margin-left: auto; font-size: 10px; font-family: 'DM Mono', monospace; color: var(--text3); background: var(--bg4); padding: 1px 5px; border-radius: 4px; }
+  .sidebar-divider { border: none; border-top: 0.5px solid var(--border); margin: 10px 10px; }
+  .medd-item { display: flex; align-items: center; gap: 7px; padding: 3px 8px; }
+  .medd-letter { width: 20px; height: 20px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 600; font-family: 'DM Mono', monospace; flex-shrink: 0; }
+  .medd-name { font-size: 11px; color: var(--text2); }
+
+  /* MAIN */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* CONTEXT BAR */
+  .context-bar { display: flex; align-items: center; gap: 8px; padding: 8px 18px; border-bottom: 0.5px solid var(--border); background: var(--bg2); flex-wrap: wrap; }
+  .context-label { font-size: 11.5px; color: var(--text3); font-weight: 500; white-space: nowrap; }
+  .context-input, .context-select { background: var(--bg3); border: 0.5px solid var(--border2); border-radius: 7px; padding: 5px 9px; font-size: 12px; color: var(--text); font-family: 'DM Sans', sans-serif; outline: none; transition: border-color 0.15s; }
+  .context-input:focus, .context-select:focus { border-color: var(--accent); }
+  .context-input::placeholder { color: var(--text3); }
+  .context-select { cursor: pointer; }
+  .context-select option { background: var(--bg3); color: var(--text); }
+  .context-sep { color: var(--text3); font-size: 12px; }
+  input[type="date"].context-input::-webkit-calendar-picker-indicator { filter: invert(0.5); cursor: pointer; }
+
+  /* WORKFLOW AREA */
+  .workflow-area { flex: 1; display: flex; overflow: hidden; }
+
+  /* INPUT PANEL */
+  .input-panel { width: 390px; min-width: 340px; border-right: 0.5px solid var(--border); display: flex; flex-direction: column; background: var(--bg2); }
+  .panel-header { padding: 14px 18px 11px; border-bottom: 0.5px solid var(--border); }
+  .panel-title { font-size: 13.5px; font-weight: 500; color: var(--text); margin-bottom: 3px; }
+  .panel-desc { font-size: 12px; color: var(--text2); line-height: 1.5; }
+  .panel-body { flex: 1; padding: 14px 18px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+  .field-group { display: flex; flex-direction: column; gap: 5px; }
+  .field-label { font-size: 11px; font-weight: 500; color: var(--text2); letter-spacing: 0.2px; }
+  .field-required { color: var(--accent); margin-left: 2px; }
+  textarea.field-input, input.field-input, select.field-input { background: var(--bg3); border: 0.5px solid var(--border2); border-radius: 8px; padding: 8px 11px; font-size: 12.5px; color: var(--text); font-family: 'DM Sans', sans-serif; outline: none; resize: vertical; transition: border-color 0.15s; width: 100%; }
+  textarea.field-input:focus, input.field-input:focus, select.field-input:focus { border-color: var(--accent); background: var(--bg4); }
+  textarea.field-input::placeholder, input.field-input::placeholder { color: var(--text3); }
+  select.field-input { cursor: pointer; }
+  select.field-input option { background: var(--bg3); color: var(--text); }
+  .panel-footer { padding: 12px 18px; border-top: 0.5px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
+  .run-btn { width: 100%; padding: 10px 0; background: var(--accent); color: #fff; border: none; border-radius: 9px; font-size: 13.5px; font-weight: 500; font-family: 'DM Sans', sans-serif; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.15s, transform 0.1s; }
+  .run-btn:hover { background: #3d6ae8; }
+  .run-btn:active { transform: scale(0.99); }
+  .run-btn:disabled { background: var(--bg4); color: var(--text3); cursor: not-allowed; transform: none; }
+  .save-btn { width: 100%; padding: 8px 0; background: transparent; color: var(--text2); border: 0.5px solid var(--border2); border-radius: 9px; font-size: 12.5px; font-family: 'DM Sans', sans-serif; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.15s; }
+  .save-btn:hover { background: var(--bg3); color: var(--text); border-color: var(--border2); }
+  .save-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .spinner { width: 15px; height: 15px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* OUTPUT PANEL */
+  .output-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--bg); }
+  .output-header { padding: 12px 22px; border-bottom: 0.5px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .output-title { font-size: 13px; font-weight: 500; color: var(--text2); }
+  .output-actions { display: flex; gap: 6px; }
+  .action-btn { background: var(--bg3); border: 0.5px solid var(--border2); border-radius: 7px; padding: 5px 11px; font-size: 11.5px; color: var(--text2); cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s; }
+  .action-btn:hover { background: var(--bg4); color: var(--text); }
+  .output-body { flex: 1; padding: 22px; overflow-y: auto; }
+
+  /* EMPTY STATE */
+  .empty-state { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: var(--text3); }
+  .empty-icon { width: 48px; height: 48px; border-radius: 13px; background: var(--bg3); border: 0.5px solid var(--border2); display: flex; align-items: center; justify-content: center; font-size: 20px; }
+  .empty-title { font-size: 14px; color: var(--text2); font-weight: 500; }
+  .empty-desc { font-size: 12.5px; text-align: center; max-width: 240px; line-height: 1.6; }
+  .welcome-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; margin-top: 14px; }
+  .welcome-card { background: var(--bg3); border: 0.5px solid var(--border2); border-radius: var(--radius-lg); padding: 12px 14px; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+  .welcome-card:hover { border-color: var(--accent); background: var(--accent-bg); }
+  .welcome-card-num { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text3); margin-bottom: 5px; }
+  .welcome-card-title { font-size: 12.5px; font-weight: 500; color: var(--text); margin-bottom: 3px; }
+  .welcome-card-desc { font-size: 11px; color: var(--text3); line-height: 1.5; }
+
+  /* AI OUTPUT */
+  .ai-output { font-size: 13.5px; line-height: 1.75; color: var(--text); }
+  .ai-output h1 { font-family: 'Instrument Serif', serif; font-size: 21px; color: var(--text); margin-bottom: 14px; padding-bottom: 11px; border-bottom: 0.5px solid var(--border2); }
+  .ai-output h2 { font-size: 11px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; color: var(--accent2); margin: 22px 0 9px; }
+  .ai-output h3 { font-size: 14px; font-weight: 500; color: var(--text); margin: 14px 0 7px; }
+  .ai-output p { margin-bottom: 9px; color: var(--text2); line-height: 1.75; }
+  .ai-output ul, .ai-output ol { padding-left: 17px; margin-bottom: 11px; color: var(--text2); }
+  .ai-output li { margin-bottom: 5px; line-height: 1.65; }
+  .ai-output strong { color: var(--text); font-weight: 500; }
+  .ai-output em { color: var(--amber); font-style: normal; }
+  .ai-output code { background: var(--bg3); border: 0.5px solid var(--border2); border-radius: 4px; padding: 1px 5px; font-family: 'DM Mono', monospace; font-size: 12px; color: var(--teal); }
+  .ai-output blockquote { border-left: 2px solid var(--accent); padding: 9px 14px; background: var(--accent-bg); border-radius: 0 8px 8px 0; margin: 11px 0; color: var(--text2); font-size: 13px; line-height: 1.7; }
+
+  /* THINKING */
+  .thinking-bar { display: flex; align-items: center; gap: 10px; padding: 11px 14px; background: var(--bg2); border: 0.5px solid var(--border2); border-radius: var(--radius); margin-bottom: 14px; font-size: 12.5px; color: var(--text2); }
+  .thinking-dots span { display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); margin: 0 2px; animation: dot-bounce 1.4s ease-in-out infinite; }
+  .thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes dot-bounce { 0%,80%,100%{transform:scale(0.6);opacity:0.4}40%{transform:scale(1);opacity:1} }
+
+  /* CLIENT HISTORY PANEL */
+  .history-panel { width: 100%; height: 100%; display: flex; flex-direction: column; }
+  .history-search { padding: 12px 18px; border-bottom: 0.5px solid var(--border); }
+  .search-input { width: 100%; background: var(--bg3); border: 0.5px solid var(--border2); border-radius: 8px; padding: 7px 12px; font-size: 13px; color: var(--text); font-family: 'DM Sans', sans-serif; outline: none; }
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--text3); }
+  .history-list { flex: 1; overflow-y: auto; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+  .history-empty { text-align: center; padding: 40px 20px; color: var(--text3); font-size: 13px; line-height: 1.7; }
+  .history-card { background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 12px 14px; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+  .history-card:hover { border-color: var(--border2); background: var(--bg3); }
+  .history-card.selected { border-color: rgba(79,123,255,0.4); background: var(--accent-bg); }
+  .hcard-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+  .hcard-company { font-size: 13.5px; font-weight: 500; color: var(--text); }
+  .hcard-date { font-size: 10.5px; color: var(--text3); font-family: 'DM Mono', monospace; white-space: nowrap; }
+  .hcard-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+  .hcard-chip { font-size: 10.5px; padding: 2px 7px; border-radius: 4px; }
+  .chip-stage { background: var(--amber-bg); color: var(--amber); }
+  .chip-mode { background: var(--accent-bg); color: var(--accent2); }
+  .chip-acv { background: var(--green-bg); color: var(--green); }
+  .hcard-preview { font-size: 12px; color: var(--text3); line-height: 1.5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hcard-actions { display: flex; gap: 6px; margin-top: 8px; }
+  .hcard-btn { font-size: 11px; padding: 3px 9px; border-radius: 5px; border: 0.5px solid var(--border2); background: transparent; color: var(--text2); cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s; }
+  .hcard-btn:hover { background: var(--bg4); color: var(--text); }
+  .hcard-btn.danger:hover { background: var(--red-bg); color: var(--red); border-color: rgba(255,92,92,0.3); }
+
+  /* HISTORY DETAIL VIEW */
+  .history-detail { flex: 1; overflow-y: auto; padding: 20px 22px; }
+  .detail-back { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text3); cursor: pointer; margin-bottom: 16px; transition: color 0.15s; }
+  .detail-back:hover { color: var(--accent2); }
+  .detail-header { margin-bottom: 18px; padding-bottom: 14px; border-bottom: 0.5px solid var(--border2); }
+  .detail-company { font-family: 'Instrument Serif', serif; font-size: 22px; color: var(--text); margin-bottom: 6px; }
+  .detail-meta { display: flex; gap: 8px; flex-wrap: wrap; }
+  .detail-content { font-size: 13.5px; line-height: 1.75; color: var(--text2); white-space: pre-wrap; }
+
+  /* HISTORY STATS */
+  .history-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; padding: 10px 12px 6px; }
+  .stat-card { background: var(--bg3); border-radius: 8px; padding: 9px 12px; text-align: center; }
+  .stat-num { font-size: 20px; font-weight: 500; color: var(--text); font-family: 'DM Mono', monospace; }
+  .stat-label { font-size: 10px; color: var(--text3); margin-top: 2px; }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 22px; right: 22px; background: var(--bg3); border: 0.5px solid var(--border2); border-radius: 10px; padding: 11px 16px; font-size: 13px; color: var(--text); display: flex; align-items: center; gap: 8px; z-index: 1000; animation: slideUp 0.25s ease; box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
+  @keyframes slideUp { from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)} }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-mark">M</div>
+    <span class="logo-text">MEDDPICC Copilot</span>
+    <span class="logo-badge">Enterprise</span>
+  </div>
+  <div class="header-right">
+    <button class="header-btn" id="history-toggle-btn" onclick="toggleHistoryView()">📁 Client History</button>
+    <div id="user-area">
+      <!-- Logged out: green dot + Sign in -->
+      <div id="signin-pill" onclick="openLoginModal()" style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:5px 12px;border-radius:8px;border:0.5px solid var(--border2);background:var(--bg3);transition:all 0.15s;">
+        <div class="status-dot"></div>
+        <span style="font-size:12px;color:var(--text2);">Sign in</span>
+      </div>
+      <!-- Logged in: avatar + name -->
+      <div id="user-pill" onclick="openLoginModal()" style="display:none;align-items:center;gap:8px;cursor:pointer;padding:4px 12px 4px 6px;border-radius:99px;border:0.5px solid var(--border2);background:var(--bg3);transition:all 0.15s;">
+        <div id="user-avatar" style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:white;"></div>
+        <span id="user-name" style="font-size:13px;color:var(--text);font-weight:500;"></span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Workflows</div>
+      <button class="nav-btn active" onclick="setMode('product')" id="nav-product">
+        <span class="nav-icon">📦</span> Product Knowledge <span class="nav-num">1</span>
+      </button>
+      <button class="nav-btn" onclick="setMode('prep')" id="nav-prep">
+        <span class="nav-icon">📋</span> Meeting Prep <span class="nav-num">2</span>
+      </button>
+      <button class="nav-btn" onclick="setMode('live')" id="nav-live">
+        <span class="nav-icon">⚡</span> Real-Time Support <span class="nav-num">3</span>
+      </button>
+      <button class="nav-btn" onclick="setMode('qualify')" id="nav-qualify">
+        <span class="nav-icon">🔍</span> Note Qualification <span class="nav-num">4</span>
+      </button>
+      <button class="nav-btn" onclick="setMode('followup')" id="nav-followup">
+        <span class="nav-icon">📤</span> Follow-Up & Forecast <span class="nav-num">5</span>
+      </button>
+    </div>
+    <hr class="sidebar-divider">
+    <div class="sidebar-section">
+      <div class="sidebar-label">MEDDPICC</div>
+      <div class="medd-item"><div class="medd-letter" style="background:rgba(79,123,255,0.15);color:#7c9fff">M</div><span class="medd-name">Metrics</span></div>
+      <div class="medd-item"><div class="medd-letter" style="background:rgba(47,214,124,0.15);color:#2fd67c">E</div><span class="medd-name">Economic Buyer</span></div>
+      <div class="medd-item"><div class="medd-letter" style="background:rgba(245,166,35,0.15);color:#f5a623">D</div><span class="medd-name">Decision Criteria</span></div>
+      <div class="medd-item"><div class="medd-letter" style="background:rgba(48,217,200,0.15);color:#30d9c8">D</div><span class="medd-name">Decision Process</span></div>
+      <div class="medd-item"><div class="medd-letter" style="background:rgba(180,138,255,0.15);color:#b48aff">P</div><span class="medd-name">Paper Process</span></div>
+      <div class="medd-item"><div class="medd-letter" style="background:rgba(255,92,92,0.15);color:#ff5c5c">I</div><span class="medd-name">Identify Pain</span></div>
+      <div class="medd-item"><div class="medd-letter" style="background:rgba(245,166,35,0.15);color:#f5a623">C</div><span class="medd-name">Champion</span></div>
+      <div class="medd-item"><div class="medd-letter" style="background:rgba(48,217,200,0.15);color:#30d9c8">C</div><span class="medd-name">Competition</span></div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <!-- CONTEXT BAR -->
+    <div class="context-bar">
+      <span class="context-label">Deal:</span>
+      <input class="context-input" id="ctx-company" placeholder="Company name" style="width:148px">
+      <span class="context-sep">/</span>
+      <select class="context-select" id="ctx-stage" style="width:148px">
+        <option value="">Stage...</option>
+        <option>Prospecting</option>
+        <option>Discovery</option>
+        <option>Qualification</option>
+        <option>Champion Identified</option>
+        <option>Technical Validation</option>
+        <option>Proof of Concept</option>
+        <option>Economic Buyer Engaged</option>
+        <option>Proposal Sent</option>
+        <option>Negotiation</option>
+        <option>Paper Process</option>
+        <option>Verbal Commit</option>
+        <option>Closed Won</option>
+        <option>Closed Lost</option>
+      </select>
+      <span class="context-sep">/</span>
+      <input class="context-input" id="ctx-value" placeholder="$ACV" style="width:80px">
+      <span class="context-sep">/</span>
+      <input class="context-input" id="ctx-close" type="date" style="width:138px" title="Close Date">
+    </div>
+
+    <!-- WORKFLOW AREA -->
+    <div class="workflow-area" id="workflow-area">
+      <!-- INPUT PANEL -->
+      <div class="input-panel" id="input-panel">
+        <div class="panel-header">
+          <div class="panel-title" id="panel-title">1 — Product Knowledge</div>
+          <div class="panel-desc" id="panel-desc">Upload or paste product information to generate a sales-ready battle card.</div>
+        </div>
+        <div class="panel-body" id="panel-body"></div>
+        <div class="panel-footer">
+          <button class="run-btn" id="run-btn" onclick="runWorkflow()">
+            <span id="run-label">Generate Intelligence ↗</span>
+          </button>
+          <button class="save-btn" id="save-btn" onclick="saveInteraction()" disabled>
+            📁 Save to Client History
+          </button>
+        </div>
+      </div>
+
+      <!-- OUTPUT PANEL -->
+      <div class="output-panel" id="output-panel">
+        <div class="output-header">
+          <span class="output-title" id="output-title">Output</span>
+          <div class="output-actions">
+            <button class="action-btn" onclick="copyOutput()">⎘ Copy</button>
+            <button class="action-btn" onclick="clearOutput()">✕ Clear</button>
+          </div>
+        </div>
+        <div class="output-body" id="output-body">
+          <div id="welcome-state">
+            <div style="max-width:460px;margin:0 auto;padding:12px 0;">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                <div style="width:34px;height:34px;background:var(--accent-bg);border:0.5px solid rgba(79,123,255,0.3);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;">🎯</div>
+                <div>
+                  <div style="font-size:15px;font-weight:500;color:var(--text);">MEDDPICC AI Copilot</div>
+                  <div style="font-size:11.5px;color:var(--text3);">Enterprise deal qualification & execution</div>
+                </div>
+              </div>
+              <p style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:10px;">Fill in deal context above, pick a workflow, and generate. Every output is MEDDPICC-grounded — no generic advice.</p>
+              <div class="welcome-grid">
+                <div class="welcome-card" onclick="setMode('product')"><div class="welcome-card-num">01</div><div class="welcome-card-title">Product Knowledge</div><div class="welcome-card-desc">Battle cards, personas, discovery Qs, objection handling</div></div>
+                <div class="welcome-card" onclick="setMode('prep')"><div class="welcome-card-num">02</div><div class="welcome-card-title">Meeting Prep</div><div class="welcome-card-desc">Pre-call brief, MEDDPICC gaps, persona questions</div></div>
+                <div class="welcome-card" onclick="setMode('live')"><div class="welcome-card-num">03</div><div class="welcome-card-title">Real-Time Support</div><div class="welcome-card-desc">Objection responses, MEDDPICC signals, live coaching</div></div>
+                <div class="welcome-card" onclick="setMode('qualify')"><div class="welcome-card-num">04</div><div class="welcome-card-title">Note Qualification</div><div class="welcome-card-desc">MEDDPICC scorecard from raw call notes</div></div>
+              </div>
+            </div>
+          </div>
+          <div id="ai-output-container" style="display:none;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTORY VIEW (replaces workflow area) -->
+    <div id="history-view" style="display:none;flex:1;overflow:hidden;display:none;">
+      <div style="display:flex;height:100%;overflow:hidden;">
+        <!-- History list -->
+        <div style="width:340px;min-width:300px;border-right:0.5px solid var(--border);display:flex;flex-direction:column;background:var(--bg2);">
+          <div style="padding:14px 14px 8px;border-bottom:0.5px solid var(--border);">
+            <div style="font-size:13.5px;font-weight:500;color:var(--text);margin-bottom:10px;">📁 Client History</div>
+            <input class="search-input" id="history-search" placeholder="Search by company, stage, or content..." oninput="filterHistory()">
+          </div>
+          <div id="history-stats-bar"></div>
+          <div class="history-list" id="history-list">
+            <div class="history-empty">No client interactions saved yet.<br>Run a workflow and click<br>"Save to Client History."</div>
+          </div>
+        </div>
+        <!-- History detail -->
+        <div style="flex:1;overflow-y:auto;background:var(--bg);" id="history-detail-pane">
+          <div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--text3);padding:30px;">
+            <div style="font-size:32px;">📄</div>
+            <div style="font-size:14px;color:var(--text2);font-weight:500;">Select an interaction</div>
+            <div style="font-size:12.5px;text-align:center;max-width:220px;line-height:1.6;">Click any saved interaction on the left to view the full output.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentMode = 'product';
+let isLoading = false;
+let lastOutput = '';
+let lastPrompt = '';
+let historyOpen = false;
+let allRecords = [];
+let selectedRecordId = null;
+
+// ── STORAGE HELPERS (localStorage, per-user, migration-ready) ─────
+// Keys are namespaced by user id so multiple users on one device stay separate,
+// and future migration to a cloud account is a clean per-user export.
+function userPrefix() {
+  const u = (typeof getUser === 'function') ? getUser() : null;
+  return u && u.id ? u.id + ':' : 'anon:';
+}
+async function storageGet(key) {
+  try {
+    const v = localStorage.getItem(userPrefix() + key);
+    return v ? { key, value: v } : null;
+  } catch(e) { return null; }
+}
+async function storageSet(key, val) {
+  try { localStorage.setItem(userPrefix() + key, val); return { key, value: val }; }
+  catch(e) { return null; }
+}
+async function storageDelete(key) {
+  try { localStorage.removeItem(userPrefix() + key); return { key }; }
+  catch(e) { return null; }
+}
+async function storageList(prefix) {
+  try {
+    const full = userPrefix() + (prefix || '');
+    const keys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(full)) keys.push({ key: k.slice(userPrefix().length) });
+    }
+    return { blobs: keys, keys };
+  } catch(e) { return null; }
+}
+
+// ── MODES ────────────────────────────────────────────────────────
+const MODES = {
+  product: {
+    title: '1 — Product Knowledge',
+    desc: 'Paste product info to generate a battle card with differentiators, personas, discovery questions, and objection handling.',
+    runLabel: 'Generate Battle Card ↗',
+    outputTitle: 'Product Intelligence',
+    fields: `
+      <div class="field-group"><label class="field-label">Product / Solution Name<span class="field-required">*</span></label><input class="field-input" id="f-product" placeholder="e.g. DataSync Enterprise Suite"></div>
+      <div class="field-group"><label class="field-label">Product Information<span class="field-required">*</span></label><textarea class="field-input" id="f-product-info" rows="7" placeholder="Paste product docs, marketing copy, feature lists, pricing, or any product content here..."></textarea></div>
+      <div class="field-group"><label class="field-label">Target Vertical / Industry</label><input class="field-input" id="f-vertical" placeholder="e.g. Financial Services, Healthcare, EdTech"></div>
+      <div class="field-group"><label class="field-label">Primary Competitors</label><input class="field-input" id="f-competitors" placeholder="e.g. Salesforce, HubSpot, Veeva"></div>
+      <div class="field-group"><label class="field-label">Price Range / Packaging</label><input class="field-input" id="f-price" placeholder="e.g. $50K–$200K ARR, 3-tier model"></div>`,
+    buildPrompt: () => `You are a MEDDPICC Enterprise AE Copilot building product intelligence for sales execution.\n\nProduct: ${v('f-product')}\nIndustry: ${v('f-vertical')||'Not specified'}\nCompetitors: ${v('f-competitors')||'Not specified'}\nPricing: ${v('f-price')||'Not specified'}\nDeal Context: ${getDealContext()}\n\nProduct Information:\n${v('f-product-info')}\n\nCreate a comprehensive sales-ready product intelligence brief with these sections:\n\n## PRODUCT OVERVIEW\n2-3 crisp sentences: what it does, who it's for, core value prop.\n\n## TOP 3 DIFFERENTIATORS\nSpecific differentiators (no generic claims). For each: what it is, why it matters, what competitor it beats.\n\n## BUYER PERSONAS\nFor each key persona (3 max): title/role, top 2 pain points, what they care about, how to speak their language.\n\n## DISCOVERY QUESTIONS\n10 MEDDPICC-aligned discovery questions. Group by: Metrics/Pain, Decision Process, Champion identification.\n\n## OBJECTION HANDLING\nTop 5 likely objections with specific, confident responses. Include the reframe and proof point.\n\n## ROI POINTS\n5 quantifiable business outcomes with metric, typical result, and how to anchor in the customer's context.\n\n## COMPETITIVE POSITIONING\n${v('f-competitors') ? `Head-to-head vs ${v('f-competitors')}: where you win, where you're vulnerable, how to reframe.` : 'Where this solution wins and how to handle "we already use X."'}\n\n## MEETING-READY BULLETS\n5 crisp value statements the AE can say verbatim in the first 10 minutes.`
+  },
+  prep: {
+    title: '2 — Meeting Preparation',
+    desc: 'Get a pre-call brief tailored to attendees, MEDDPICC gaps, and meeting objectives.',
+    runLabel: 'Generate Meeting Brief ↗',
+    outputTitle: 'Pre-Call Brief',
+    fields: `
+      <div class="field-group"><label class="field-label">Meeting Type<span class="field-required">*</span></label><select class="field-input" id="f-meeting-type"><option value="">Select type...</option><option>Discovery Call</option><option>Technical Demo</option><option>Executive Business Review</option><option>Champion Enablement</option><option>Negotiation / Commercial Review</option><option>Procurement / Legal Review</option><option>Renewal or Expansion</option></select></div>
+      <div class="field-group"><label class="field-label">Attendees & Their Roles<span class="field-required">*</span></label><textarea class="field-input" id="f-attendees" rows="3" placeholder="e.g. Sarah Lin (VP of Ops, economic buyer), Mike Torres (IT Lead), Dana (Sr. Analyst — our Champion)"></textarea></div>
+      <div class="field-group"><label class="field-label">What You Know About the Company</label><textarea class="field-input" id="f-company-context" rows="4" placeholder="Recent news, initiatives, prior conversations, pain points mentioned, LinkedIn research..."></textarea></div>
+      <div class="field-group"><label class="field-label">Current MEDDPICC Gaps</label><textarea class="field-input" id="f-medd-gaps" rows="3" placeholder="What's missing or unconfirmed? e.g. Economic Buyer not identified, no confirmed timeline..."></textarea></div>
+      <div class="field-group"><label class="field-label">What You Need From This Meeting</label><input class="field-input" id="f-objective" placeholder="e.g. Confirm budget, get exec sponsor intro, agree on next steps"></div>`,
+    buildPrompt: () => `You are a MEDDPICC Enterprise AE Copilot preparing an AE for a customer meeting.\n\nMeeting Type: ${v('f-meeting-type')}\nAttendees: ${v('f-attendees')}\nObjective: ${v('f-objective')||'Not specified'}\nDeal Context: ${getDealContext()}\n\nCompany/Deal Intelligence:\n${v('f-company-context')||'No prior context'}\n\nMEDDPICC Gaps:\n${v('f-medd-gaps')||'Not specified'}\n\n## MEETING BRIEF\nOne paragraph: situation, what's at stake, the single most important outcome.\n\n## LIKELY CUSTOMER PRIORITIES\nWhat each attendee is walking in wanting. Include unspoken concerns.\n\n## MEDDPICC GAPS TO CLOSE\nFor each unresolved component: exact question to ask, why it matters, what a good answer vs. red flag looks like.\n\n## PERSONA-SPECIFIC QUESTIONS\n3–4 targeted questions per attendee role. Tie each to MEDDPICC qualification.\n\n## VALUE POINTS TO HIT\n3–4 most relevant value messages for this specific meeting. Connect each to their priorities.\n\n## LIKELY OBJECTIONS & HOW TO HANDLE\nTop 3 objections likely in this meeting type with direct, confident responses.\n\n## RISKS & RED FLAGS\n2–3 signals that would indicate trouble — things to listen for.\n\n## RECOMMENDED NEXT STEPS\nWhat to commit to confirming before leaving. Include the exact ask to close the meeting strong.`
+  },
+  live: {
+    title: '3 — Real-Time Sales Support',
+    desc: 'Paste what a customer just said. Get an instant response strategy with word-for-word options.',
+    runLabel: 'Get Response Strategy ↗',
+    outputTitle: 'Live Sales Support',
+    fields: `
+      <div class="field-group"><label class="field-label">Customer Statement / Question<span class="field-required">*</span></label><textarea class="field-input" id="f-customer-input" rows="5" placeholder="Paste or type exactly what the customer said, asked, or objected to..."></textarea></div>
+      <div class="field-group"><label class="field-label">Who Said It</label><input class="field-input" id="f-who-said" placeholder="e.g. CFO, IT Director, our Champion, Procurement"></div>
+      <div class="field-group"><label class="field-label">Context / What Was Happening</label><textarea class="field-input" id="f-live-context" rows="3" placeholder="What stage of the conversation? What had just been shown or discussed?"></textarea></div>
+      <div class="field-group"><label class="field-label">What Are You Most Worried About?</label><input class="field-input" id="f-worry" placeholder="e.g. losing to competitor, deal slipping, budget getting cut"></div>
+      <div class="field-group"><label class="field-label">Your Product / Solution</label><input class="field-input" id="f-live-product" placeholder="Brief description of what you're selling"></div>`,
+    buildPrompt: () => `You are a MEDDPICC Enterprise AE Copilot providing real-time sales support.\n\nCustomer Said: "${v('f-customer-input')}"\nWho Said It: ${v('f-who-said')||'Unknown'}\nContext: ${v('f-live-context')||'Not provided'}\nAE Concern: ${v('f-worry')||'Not specified'}\nProduct: ${v('f-live-product')||'Not specified'}\nDeal Context: ${getDealContext()}\n\n## WHAT THIS SIGNAL MEANS\nIs this an objection, buying signal, concern? What does this reveal about their MEDDPICC state? What is the person really saying underneath?\n\n## MEDDPICC INSIGHT\nWhat does this tell you about Metrics / Economic Buyer / Decision Criteria / Process / Pain / Champion / Competition?\n\n## HOW TO RESPOND — RIGHT NOW\n3 word-for-word response options:\n- **Option A (Probe deeper):** A question that advances qualification\n- **Option B (Reframe & build value):** Addresses the concern and pivots to value\n- **Option C (Direct close):** A response that moves toward commitment\n\n## FEATURES TO BUSINESS VALUE\nTranslate relevant capabilities into customer's business language. Outcomes only — no tech specs.\n\n## FOLLOW-UP QUESTIONS\n2–3 follow-up questions to ask next to advance MEDDPICC qualification.\n\n## RISK FLAG\nHonest assessment: is this a red flag? Risk level and what the AE should do after the call.`
+  },
+  qualify: {
+    title: '4 — Note-Taking & Qualification',
+    desc: 'Drop raw call notes or a transcript. Get a MEDDPICC scorecard with gaps and next steps.',
+    runLabel: 'Qualify & Score Deal ↗',
+    outputTitle: 'MEDDPICC Qualification',
+    fields: `
+      <div class="field-group"><label class="field-label">Call Notes or Transcript<span class="field-required">*</span></label><textarea class="field-input" id="f-notes" rows="10" placeholder="Paste raw call notes, transcript, or meeting summary here. Don't clean it up — the more detail the better."></textarea></div>
+      <div class="field-group"><label class="field-label">Meeting Type</label><input class="field-input" id="f-qual-meeting" placeholder="e.g. Discovery call, demo, QBR, negotiation"></div>
+      <div class="field-group"><label class="field-label">What Were You Hoping to Confirm?</label><textarea class="field-input" id="f-hoped" rows="2" placeholder="What specific MEDDPICC items were you going into this call to nail down?"></textarea></div>`,
+    buildPrompt: () => `You are a MEDDPICC Enterprise AE Copilot analyzing call notes to qualify a deal.\n\nMeeting Type: ${v('f-qual-meeting')||'Not specified'}\nAE Was Hoping to Confirm: ${v('f-hoped')||'Not specified'}\nDeal Context: ${getDealContext()}\n\nCall Notes / Transcript:\n${v('f-notes')}\n\n## CALL SUMMARY\n2–3 sentences: what happened, key developments, tone/sentiment.\n\n## MEDDPICC SCORECARD\n\nFor each component, provide:\n- **Status:** ✅ Confirmed / ⚠️ Partial / ❌ Missing / 🔴 Red Flag\n- **What Was Confirmed:** Evidence from the notes\n- **What's Still Missing:** The exact gap\n- **Next Question:** The precise question to fill this gap\n\n### M — Metrics\n### E — Economic Buyer\n### D — Decision Criteria\n### D — Decision Process\n### P — Paper Process\n### I — Identify Pain\n### C — Champion\n### C — Competition\n\n## OVERALL DEAL HEALTH\nHonest 1–5 qualification score with reasoning. Qualifying in or out?\n\n## TOP 3 RISKS\nMost dangerous gaps or signals. What could kill this deal?\n\n## WHAT TO DO NEXT\n3–5 prioritized actions for the AE in the next 48 hours. Be specific — who to reach out to, what to say.\n\n## CRM NOTE\nClean CRM entry to paste directly. Factual, MEDDPICC-organized, under 200 words.`
+  },
+  followup: {
+    title: '5 — Follow-Up & Forecasting',
+    desc: 'Generate follow-up emails, CRM updates, mutual action plans, and forecast risk assessments.',
+    runLabel: 'Generate Follow-Up Package ↗',
+    outputTitle: 'Follow-Up & Forecast',
+    fields: `
+      <div class="field-group"><label class="field-label">Output Type<span class="field-required">*</span></label><select class="field-input" id="f-output-type"><option value="">Select...</option><option>Full Follow-Up Package (all of the below)</option><option>Customer Follow-Up Email</option><option>Mutual Action Plan (MAP)</option><option>Champion Enablement Message</option><option>Executive Sponsor Summary</option><option>Forecast Risk Assessment</option><option>CRM Opportunity Update</option></select></div>
+      <div class="field-group"><label class="field-label">What Happened in the Meeting<span class="field-required">*</span></label><textarea class="field-input" id="f-what-happened" rows="5" placeholder="Summary of what was discussed, agreed, commitments made, tone, surprises..."></textarea></div>
+      <div class="field-group"><label class="field-label">Agreed Next Steps</label><textarea class="field-input" id="f-next-steps" rows="3" placeholder="What both sides committed to doing after this meeting..."></textarea></div>
+      <div class="field-group"><label class="field-label">Current MEDDPICC State</label><textarea class="field-input" id="f-medd-state" rows="3" placeholder="What's confirmed, what's missing, who is the Champion, Economic Buyer, paper process..."></textarea></div>
+      <div class="field-group"><label class="field-label">Forecast Category</label><select class="field-input" id="f-forecast-cat"><option value="">Select...</option><option>Commit</option><option>Best Case</option><option>Pipeline</option><option>Upside</option></select></div>`,
+    buildPrompt: () => {
+      const ctx = getDealContext();
+      const ot = v('f-output-type');
+      const emailOnly = ot === 'Customer Follow-Up Email';
+      const mapOnly = ot === 'Mutual Action Plan (MAP)';
+      return `You are a MEDDPICC Enterprise AE Copilot creating post-meeting deliverables.\n\nOutput Requested: ${ot}\nDeal Context: ${ctx}\nForecast Category: ${v('f-forecast-cat')||'Not specified'}\n\nWhat Happened:\n${v('f-what-happened')}\n\nAgreed Next Steps:\n${v('f-next-steps')||'None specified'}\n\nCurrent MEDDPICC State:\n${v('f-medd-state')||'Not specified'}\n\n${emailOnly ? `Create a professional customer follow-up email.\n\n**Subject Line:** Crisp, specific, action-oriented.\n\nEmail body (under 200 words):\n- Warm but brief opening\n- Summary of what resonated (customer-centric)\n- Confirm next steps with clear ownership and dates\n- One value-reinforcing statement tied to their pain\n- Clear close with the ask\n\nSound like a trusted advisor, not a vendor.` : mapOnly ? `Create a Mutual Action Plan (MAP) to share with the customer.\n\nInclude:\n- Deal objective and target close date\n- Milestone table: Action | Owner | Due Date | Status\n- Cover: technical validation, security review, legal/procurement, exec alignment, commercial agreement\n- A note about what happens if milestones slip\n\nMake it collaborative — both sides own this.` : `## CUSTOMER FOLLOW-UP EMAIL\nSubject line + email under 200 words. Warm, specific, action-oriented.\n\n## MUTUAL ACTION PLAN\nMilestone table: technical validation, security, legal/procurement, exec alignment, commercial sign-off. Owners, dates, dependencies.\n\n## CHAMPION ENABLEMENT MESSAGE\nShort, punchy internal message the Champion can forward to stakeholders — not a sales pitch. Give them the talking points.\n\n## EXECUTIVE SPONSOR SUMMARY\n1-page summary the Champion can share upward. Business outcomes, ROI, strategic fit, risk of inaction.\n\n## MEDDPICC UPDATE\nWhat changed this meeting, what's now confirmed, what's still at risk.\n\n## FORECAST RISK ASSESSMENT\n- Forecast category recommendation and why\n- Top 3 risks to closing on time\n- Single most important derisking action\n- What would need to be true to reach Closed Won\n\n## CRM OPPORTUNITY UPDATE\nClean CRM note under 150 words with updated MEDDPICC, deal status, next steps.`}`;
+    }
+  }
+};
+
+function v(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; }
+
+function getDealContext() {
+  const company = document.getElementById('ctx-company').value.trim();
+  const stage = document.getElementById('ctx-stage').value.trim();
+  const val = document.getElementById('ctx-value').value.trim();
+  const close = document.getElementById('ctx-close').value.trim();
+  if (!company && !stage && !val && !close) return 'No deal context provided';
+  return [company&&`Company: ${company}`, stage&&`Stage: ${stage}`, val&&`ACV: ${val}`, close&&`Close: ${close}`].filter(Boolean).join(' | ');
+}
+
+function setMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`nav-${mode}`).classList.add('active');
+  const m = MODES[mode];
+  document.getElementById('panel-title').textContent = m.title;
+  document.getElementById('panel-desc').textContent = m.desc;
+  document.getElementById('panel-body').innerHTML = m.fields;
+  document.getElementById('run-label').textContent = m.runLabel;
+  document.getElementById('output-title').textContent = m.outputTitle;
+  document.getElementById('save-btn').disabled = true;
+  if (historyOpen) toggleHistoryView();
+}
+
+async function runWorkflow() {
+  if (isLoading) return;
+  const m = MODES[currentMode];
+  const prompt = m.buildPrompt();
+
+  isLoading = true;
+  const btn = document.getElementById('run-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div><span>Generating...</span>';
+  document.getElementById('save-btn').disabled = true;
+
+  document.getElementById('welcome-state').style.display = 'none';
+  const container = document.getElementById('ai-output-container');
+  container.style.display = 'block';
+  container.innerHTML = `<div class="thinking-bar"><div class="thinking-dots"><span></span><span></span><span></span></div><span>Analyzing deal context and generating ${m.outputTitle.toLowerCase()}...</span></div>`;
+
+  try {
+    const response = await fetch('/.netlify/functions/meddpicc', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        system: `You are the MEDDPICC Enterprise Account Executive Copilot. You help Enterprise AEs qualify, manage, forecast, and close complex B2B opportunities using the MEDDPICC framework. Be practical, direct, and sales-focused. Never give generic advice. Tie every recommendation to deal progression, business value, and next steps. When information is missing, state the gap and give the exact question to ask. Format with ## for section headers, ### for subsections, **bold** for key terms, bullet points for lists.`,
+        messages: [{ role: 'user', content: prompt }],
+        workflow: currentMode
+      })
+    });
+    const data = await response.json();
+    const text = data.content?.map(b => b.text || '').join('') || 'No response received.';
+    lastOutput = text;
+    lastPrompt = prompt;
+    container.innerHTML = `<div class="ai-output">${renderMarkdown(text)}</div>`;
+    document.getElementById('save-btn').disabled = false;
+  } catch (err) {
+    container.innerHTML = `<div class="ai-output"><blockquote>⚠️ Error connecting to Claude API. Check your connection and try again.<br><small>${err.message}</small></blockquote></div>`;
+  }
+
+  isLoading = false;
+  btn.disabled = false;
+  btn.innerHTML = `<span id="run-label">${m.runLabel}</span>`;
+}
+
+// ── CLIENT HISTORY ────────────────────────────────────────────────
+async function saveInteraction() {
+  if (!lastOutput) return;
+  const company = document.getElementById('ctx-company').value.trim() || 'Unknown Company';
+  const stage = document.getElementById('ctx-stage').value.trim() || '';
+  const acv = document.getElementById('ctx-value').value.trim() || '';
+  const close = document.getElementById('ctx-close').value.trim() || '';
+  const id = 'record-' + Date.now();
+  const record = {
+    id,
+    company,
+    stage,
+    acv,
+    close,
+    mode: MODES[currentMode].outputTitle,
+    modeKey: currentMode,
+    savedAt: new Date().toISOString(),
+    output: lastOutput,
+    preview: lastOutput.replace(/[#*`>\n]/g,'').trim().slice(0,120)
+  };
+  await storageSet(id, JSON.stringify(record));
+  showToast('✓ Saved to Client History');
+  document.getElementById('save-btn').disabled = true;
+  if (historyOpen) await loadHistory();
+}
+
+async function loadHistory() {
+  const result = await storageList('record-');
+  allRecords = [];
+  if (result && result.keys && result.keys.length) {
+    for (const key of result.keys) {
+      const r = await storageGet(key);
+      if (r && r.value) {
+        try { allRecords.push(JSON.parse(r.value)); } catch(e) {}
+      }
+    }
+    allRecords.sort((a,b) => new Date(b.savedAt) - new Date(a.savedAt));
+  }
+  renderHistoryList(allRecords);
+  renderHistoryStats();
+}
+
+function renderHistoryStats() {
+  const bar = document.getElementById('history-stats-bar');
+  if (!allRecords.length) { bar.innerHTML=''; return; }
+  const companies = new Set(allRecords.map(r=>r.company)).size;
+  bar.innerHTML = `<div class="history-stats">
+    <div class="stat-card"><div class="stat-num">${allRecords.length}</div><div class="stat-label">Interactions</div></div>
+    <div class="stat-card"><div class="stat-num">${companies}</div><div class="stat-label">Companies</div></div>
+    <div class="stat-card"><div class="stat-num">${allRecords.filter(r=>r.stage==='Closed Won').length}</div><div class="stat-label">Closed Won</div></div>
+  </div>`;
+}
+
+function renderHistoryList(records) {
+  const list = document.getElementById('history-list');
+  if (!records.length) {
+    list.innerHTML = '<div class="history-empty">No client interactions saved yet.<br>Run a workflow and click<br>"Save to Client History."</div>';
+    return;
+  }
+  list.innerHTML = records.map(r => {
+    const date = new Date(r.savedAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    return `<div class="history-card${r.id===selectedRecordId?' selected':''}" id="hcard-${r.id}" onclick="viewRecord('${r.id}')">
+      <div class="hcard-top"><span class="hcard-company">${r.company}</span><span class="hcard-date">${date}</span></div>
+      <div class="hcard-meta">
+        ${r.stage?`<span class="hcard-chip chip-stage">${r.stage}</span>`:''}
+        <span class="hcard-chip chip-mode">${r.mode}</span>
+        ${r.acv?`<span class="hcard-chip chip-acv">${r.acv}</span>`:''}
+      </div>
+      <div class="hcard-preview">${r.preview}…</div>
+      <div class="hcard-actions">
+        <button class="hcard-btn" onclick="event.stopPropagation();copyRecord('${r.id}')">⎘ Copy</button>
+        <button class="hcard-btn danger" onclick="event.stopPropagation();deleteRecord('${r.id}')">✕ Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterHistory() {
+  const q = document.getElementById('history-search').value.toLowerCase();
+  if (!q) { renderHistoryList(allRecords); return; }
+  renderHistoryList(allRecords.filter(r =>
+    r.company.toLowerCase().includes(q) ||
+    (r.stage||'').toLowerCase().includes(q) ||
+    r.mode.toLowerCase().includes(q) ||
+    r.output.toLowerCase().includes(q)
+  ));
+}
+
+function viewRecord(id) {
+  selectedRecordId = id;
+  document.querySelectorAll('.history-card').forEach(c => c.classList.remove('selected'));
+  const el = document.getElementById('hcard-'+id);
+  if (el) el.classList.add('selected');
+  const r = allRecords.find(x => x.id === id);
+  if (!r) return;
+  const date = new Date(r.savedAt).toLocaleString('en-US',{month:'long',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  const pane = document.getElementById('history-detail-pane');
+  pane.innerHTML = `<div class="history-detail">
+    <div class="detail-back" onclick="clearDetailView()">← Back to list</div>
+    <div class="detail-header">
+      <div class="detail-company">${r.company}</div>
+      <div class="detail-meta">
+        ${r.stage?`<span class="hcard-chip chip-stage">${r.stage}</span>`:''}
+        <span class="hcard-chip chip-mode">${r.mode}</span>
+        ${r.acv?`<span class="hcard-chip chip-acv">${r.acv}</span>`:''}
+        ${r.close?`<span class="hcard-chip" style="background:var(--teal-bg);color:var(--teal)">Close: ${r.close}</span>`:''}
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-top:6px;">Saved ${date}</div>
+    </div>
+    <div class="ai-output">${renderMarkdown(r.output)}</div>
+  </div>`;
+}
+
+function clearDetailView() {
+  selectedRecordId = null;
+  document.querySelectorAll('.history-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('history-detail-pane').innerHTML = `<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--text3);padding:30px;"><div style="font-size:32px;">📄</div><div style="font-size:14px;color:var(--text2);font-weight:500;">Select an interaction</div><div style="font-size:12.5px;text-align:center;max-width:220px;line-height:1.6;">Click any saved interaction on the left to view the full output.</div></div>`;
+}
+
+async function deleteRecord(id) {
+  await storageDelete(id);
+  allRecords = allRecords.filter(r => r.id !== id);
+  if (selectedRecordId === id) clearDetailView();
+  renderHistoryList(allRecords);
+  renderHistoryStats();
+  showToast('Deleted');
+}
+
+async function copyRecord(id) {
+  const r = allRecords.find(x => x.id === id);
+  if (!r) return;
+  navigator.clipboard.writeText(r.output).then(() => showToast('✓ Copied'));
+}
+
+function toggleHistoryView() {
+  historyOpen = !historyOpen;
+  const btn = document.getElementById('history-toggle-btn');
+  const histView = document.getElementById('history-view');
+  const workArea = document.getElementById('workflow-area');
+  if (historyOpen) {
+    btn.classList.add('active');
+    workArea.style.display = 'none';
+    histView.style.display = 'flex';
+    loadHistory();
+  } else {
+    btn.classList.remove('active');
+    workArea.style.display = 'flex';
+    histView.style.display = 'none';
+  }
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────
+function renderMarkdown(text) {
+  return text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/^#{4} (.+)$/gm,'<h3>$1</h3>')
+    .replace(/^#{3} (.+)$/gm,'<h3>$1</h3>')
+    .replace(/^#{2} (.+)$/gm,'<h2>$1</h2>')
+    .replace(/^# (.+)$/gm,'<h1>$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/`(.+?)`/g,'<code>$1</code>')
+    .replace(/^&gt; (.+)$/gm,'<blockquote>$1</blockquote>')
+    .replace(/^[-•] (.+)$/gm,'<li>$1</li>')
+    .replace(/^(\d+)\. (.+)$/gm,'<li><strong>$1.</strong> $2</li>')
+    .replace(/(<li>[\s\S]*?<\/li>)/g,m=>`<ul>${m}</ul>`)
+    .replace(/<\/ul>\s*<ul>/g,'')
+    .replace(/\n\n/g,'</p><p>').replace(/\n/g,' ')
+    .replace(/<p>(<[hbu])/g,'$1').replace(/(<\/[hbu][1-3l]>)<\/p>/g,'$1')
+    .replace(/<p><\/p>/g,'');
+}
+
+function copyOutput() {
+  const c = document.getElementById('ai-output-container');
+  if (!c.innerText.trim()) { showToast('Nothing to copy'); return; }
+  navigator.clipboard.writeText(c.innerText).then(() => showToast('✓ Copied to clipboard'));
+}
+
+function clearOutput() {
+  document.getElementById('ai-output-container').style.display = 'none';
+  document.getElementById('ai-output-container').innerHTML = '';
+  document.getElementById('welcome-state').style.display = 'block';
+  document.getElementById('save-btn').disabled = true;
+  lastOutput = '';
+}
+
+function showToast(msg) {
+  const ex = document.querySelector('.toast');
+  if (ex) ex.remove();
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2600);
+}
+
+// ── OTE MOTIVATION TICKER ─────────────────────────────────────────
+const OTE_PHRASES = [
+  'On pace for OTE 🚀',
+  'Quota: within reach 🎯',
+  'Closing season 💼',
+  'Stack rank: climbing 📈',
+  'Commission engine: on 💰',
+  'Pipeline → Plan 🔥'
+];
+let oteIndex = 0;
+function rotateOTE() {
+  const el = document.getElementById('ote-label');
+  if (!el) return;
+  oteIndex = (oteIndex + 1) % OTE_PHRASES.length;
+  el.style.opacity = '0';
+  setTimeout(() => { el.textContent = OTE_PHRASES[oteIndex]; el.style.opacity = '1'; }, 250);
+}
+setInterval(rotateOTE, 5000);
+
+// Init
+setMode('product');
+
+// ── User identity (v1: name only, stored locally, migration-ready) ──
+const USER_KEY = 'meddpicc_user_v1';
+
+function getUser() {
+  try { return JSON.parse(localStorage.getItem(USER_KEY) || 'null'); }
+  catch(e) { return null; }
+}
+
+function setUser(user) {
+  localStorage.setItem(USER_KEY, JSON.stringify(user));
+}
+
+function initials(name) {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return name.slice(0, 2).toUpperCase();
+}
+
+function renderUserState() {
+  const user = getUser();
+  const signinPill = document.getElementById('signin-pill');
+  const userPill = document.getElementById('user-pill');
+  const logoutRow = document.getElementById('logout-row');
+
+  if (user && user.name) {
+    signinPill.style.display = 'none';
+    userPill.style.display = 'flex';
+    document.getElementById('user-name').textContent = user.name;
+    document.getElementById('user-avatar').textContent = initials(user.name);
+    if (logoutRow) logoutRow.style.display = 'block';
+  } else {
+    signinPill.style.display = 'flex';
+    userPill.style.display = 'none';
+    if (logoutRow) logoutRow.style.display = 'none';
+  }
+}
+
+function openLoginModal() {
+  const user = getUser();
+  const input = document.getElementById('login-name-input');
+  if (user && user.name) input.value = user.name;
+  document.getElementById('login-overlay').style.display = 'flex';
+  document.getElementById('logout-row').style.display = (user && user.name) ? 'block' : 'none';
+  setTimeout(() => input.focus(), 50);
+}
+
+function closeLoginModal() {
+  document.getElementById('login-overlay').style.display = 'none';
+}
+
+function doLogin() {
+  const name = document.getElementById('login-name-input').value.trim();
+  if (!name) return;
+
+  const existing = getUser();
+  // Migration-ready user object: stable id, name, created date, version
+  const user = {
+    id: existing?.id || ('user_' + Date.now() + '_' + Math.random().toString(36).slice(2,8)),
+    name: name,
+    createdAt: existing?.createdAt || new Date().toISOString(),
+    version: 1,
+  };
+  setUser(user);
+  renderUserState();
+  closeLoginModal();
+}
+
+function doLogout() {
+  localStorage.removeItem(USER_KEY);
+  renderUserState();
+  closeLoginModal();
+}
+
+// Init on load
+renderUserState();
+
+</script>
+
+<!-- Login Modal -->
+<div id="login-overlay" onclick="if(event.target===this)closeLoginModal()" style="position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:1000;">
+  <div style="background:var(--bg2);border:0.5px solid var(--border2);border-radius:16px;padding:32px;width:380px;box-shadow:0 12px 48px rgba(0,0,0,0.5);">
+    <div style="font-size:20px;font-weight:600;color:var(--text);margin-bottom:6px;">Welcome 👋</div>
+    <div style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:20px;">Enter your name to personalize your workspace. Your deal history stays on this device.</div>
+    <input type="text" id="login-name-input" placeholder="Your name (e.g. Alex Chen)" maxlength="40"
+      style="width:100%;background:var(--bg3);border:0.5px solid var(--border2);border-radius:9px;padding:12px 14px;color:var(--text);font-size:14px;outline:none;font-family:'DM Sans',sans-serif;margin-bottom:16px;"
+      onkeydown="if(event.key==='Enter')doLogin()">
+    <div style="display:flex;gap:8px;">
+      <button onclick="doLogin()" style="flex:1;background:var(--accent);color:white;border:none;border-radius:9px;padding:11px;font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Continue</button>
+    </div>
+    <div id="logout-row" style="display:none;margin-top:14px;text-align:center;">
+      <button onclick="doLogout()" style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;text-decoration:underline;font-family:'DM Sans',sans-serif;">Sign out</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
