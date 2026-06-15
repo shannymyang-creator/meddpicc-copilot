@@ -1,5 +1,7 @@
 // Netlify Function — MEDDPICC Copilot backend proxy
-// API key stored in Netlify environment variables (never exposed to client)
+// Uses Node's built-in https module (no fetch dependency, works on any Node version)
+
+const https = require('https');
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
@@ -26,37 +28,47 @@ exports.handler = async (event) => {
     };
   }
 
-  // Abort the upstream request before Netlify's 26s/30s wall so we return a real error
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 24000);
+  const payload = JSON.stringify({
+    model: 'claude-sonnet-4-6',
+    max_tokens: 2000,
+    system: body.system,
+    messages: body.messages,
+  });
 
   try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 2000,
-        system: body.system,
-        messages: body.messages,
-      }),
-      signal: controller.signal,
+    const result = await new Promise((resolve, reject) => {
+      const req = https.request(
+        {
+          hostname: 'api.anthropic.com',
+          path: '/v1/messages',
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(payload),
+            'x-api-key': ANTHROPIC_API_KEY,
+            'anthropic-version': '2023-06-01',
+          },
+          timeout: 25000,
+        },
+        (res) => {
+          let data = '';
+          res.on('data', (chunk) => { data += chunk; });
+          res.on('end', () => resolve({ status: res.statusCode, body: data }));
+        }
+      );
+
+      req.on('error', (e) => reject(e));
+      req.on('timeout', () => { req.destroy(); reject(new Error('Request to Anthropic timed out')); });
+
+      req.write(payload);
+      req.end();
     });
 
-    clearTimeout(timeout);
-
-    const text = await resp.text();
-
-    if (!resp.ok) {
-      // Surface the real upstream error instead of hanging
-      let msg = text;
-      try { msg = JSON.parse(text).error?.message || text; } catch (e) {}
+    if (result.status !== 200) {
+      let msg = result.body;
+      try { msg = JSON.parse(result.body).error?.message || result.body; } catch (e) {}
       return {
-        statusCode: resp.status,
+        statusCode: result.status,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ error: 'Anthropic API error: ' + msg }),
       };
@@ -67,17 +79,13 @@ exports.handler = async (event) => {
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
-      body: text,
+      body: result.body,
     };
   } catch (e) {
-    clearTimeout(timeout);
-    const msg = e.name === 'AbortError'
-      ? 'Request to Anthropic timed out after 24s'
-      : (e.message || String(e));
     return {
       statusCode: 502,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ error: msg }),
+      body: JSON.stringify({ error: e.message || String(e) }),
     };
   }
 };
